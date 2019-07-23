@@ -11,18 +11,19 @@ from ..item import Item
 
 
 class Spider():
-    start_url = 'https://www.baidu.com'  # 爬虫最开启请求的url
+    start_url = []  # 爬虫最开启请求的url
 
     def start_request(self):
         """
         构造start_url地址的请求
         :return: request对象
         """
-        return Request(self.start_url)
+        for url in self.start_url:
+            yield Request(url)
 
     def parse(self, response):
         """
         默认处理start_url地址对应的响应
         :return: item 或者 request
         """
-        return Item(response.body)
+        yield Item(response.body)

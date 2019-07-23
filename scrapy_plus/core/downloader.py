@@ -8,6 +8,7 @@
 # 下载器
 import requests
 from ..http.response import Response
+from ..utils.log import logger
 
 
 class Downloader():
@@ -25,4 +26,6 @@ class Downloader():
         else:
             raise Exception('请求方法不支持: <{}>'.format(request.method))
 
+        logger.info('<{} {}>'.format(resp.status_code,resp.request.url))
         return Response(url=resp.url, headers=resp.headers, body=resp.content, status_code=resp.status_code)
+

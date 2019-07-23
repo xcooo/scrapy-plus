@@ -30,8 +30,11 @@ class Scheduler():
         获取一个请求对象并返回
         :return:request
         """
-        request = self.queue.get()
-        return request
+        try:
+            request = self.queue.get(block=False)
+            return request
+        except:
+            return None
 
     def _filter_request(self,request):
         """
