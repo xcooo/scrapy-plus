@@ -14,7 +14,7 @@ from six.moves.queue import Queue
 
 class Scheduler():
     def __init__(self):
-        self.queue = Queue
+        self.queue = Queue()
 
     def add_request(self, request):
         """

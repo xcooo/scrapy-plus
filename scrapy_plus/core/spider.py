@@ -11,7 +11,7 @@ from ..item import Item
 
 
 class Spider():
-    start_url = 'http://www.baidu.com'  # 爬虫最开启请求的url
+    start_url = 'https://www.baidu.com'  # 爬虫最开启请求的url
 
     def start_request(self):
         """
