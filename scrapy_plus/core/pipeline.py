@@ -16,4 +16,4 @@ class Pipeline():
         :param item:item
         :return:
         """
-        print('item:',item)
+        print('item:',item.data)

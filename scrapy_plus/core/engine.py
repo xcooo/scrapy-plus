@@ -49,7 +49,7 @@ class Engine():
     def _start_request(self):
         """初始化请求,调用爬虫的start_request方法,把所有的请求添加到调度器中"""
         # 1. 调用爬虫的start_request的方法,获取request对象
-        for start_request in self.spider.start_request():
+        for start_request in self.spider.start_requests():
 
             # 对start_request进行爬虫中间件的处理
             start_request = self.spider_mid.process_request(start_request)
@@ -73,14 +73,20 @@ class Engine():
         # 4. 调用下载器的get_response的方法,获取响应
         response = self.downloader.get_response(request)
 
+        # 把request的meta属性的值传递给response的meta
+        response.meta = request.meta
+
         # response对象经过下载中间件的process_response进行处理
         response = self.downloader_mid.process_response(response)
 
         # response对象经过爬虫中间件的process_response进行处理
         response = self.spider_mid.process_response(response)
 
+        # 获取request对象响应的parse方法
+        parse = getattr(self.spider, request.parse)
+
         # 5. 调用爬虫的parse的方法,处理响应
-        for result in self.spider.parse(response):
+        for result in parse(response):
 
             # 6. 判断结果的类型,如果是request对象, 重新交给调度器的add_request
             if isinstance(result, Request):

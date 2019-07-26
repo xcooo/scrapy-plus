@@ -11,14 +11,14 @@ from ..item import Item
 
 
 class Spider():
-    start_url = []  # 爬虫最开启请求的url
+    start_urls = []  # 爬虫最开启请求的url
 
-    def start_request(self):
+    def start_requests(self):
         """
         构造start_url地址的请求
         :return: request对象
         """
-        for url in self.start_url:
+        for url in self.start_urls:
             yield Request(url)
 
     def parse(self, response):
