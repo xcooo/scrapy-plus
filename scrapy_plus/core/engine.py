@@ -16,21 +16,45 @@ from .pipeline import Pipeline
 from .scheduler import Scheduler
 from .spider import Spider
 from ..http.request import Request
+from ..conf.settings import PIPELINES, SPIDERS, SPIDER_MIDDLEWARES, DOWNLOADER_MIDDLEWARES
+import importlib
 
 class Engine():
     # 实现对引擎的封装
-    def __init__(self,spiders,pipelines=[], spider_mids=[], downloader_mids=[]):
+    def __init__(self):
         """
         初始化其他组件
         """
         self.scheduler = Scheduler()
         self.downloader = Downloader()
-        self.spiders = spiders  # 字典
-        self.pipelines = pipelines
-        self.spider_mids = spider_mids  # 列表
-        self.downloader_mids = downloader_mids # 列表
+        self.spiders = self._auto_import_instances(SPIDERS, is_spider=True) # 字典
+        self.pipelines = self._auto_import_instances(PIPELINES) # 列表
+        self.spider_mids = self._auto_import_instances(SPIDER_MIDDLEWARES)  # 列表
+        self.downloader_mids = self._auto_import_instances(DOWNLOADER_MIDDLEWARES) # 列表
         self.total_request_num = 0 # 总的请求数
         self.total_response_num = 0 # 总的响应数
+
+    def _auto_import_instances(self, path ,is_spider=False):
+        """
+        实现模块的动态导入, 传入模块路径列表, 返回类的实例
+        :param path: # 包含模块字符串的列表
+        :return: {'name':spider''}/['pipeline等]
+        """
+        if is_spider:
+            instances = {}
+        else:
+            instances = []
+
+        for p in path:
+            module_name = p.rsplit('.',1)[0] # 获取模块的路径名字
+            cls_name = p.rsplit('.',1)[-1] # 类名
+            module = importlib.import_module(module_name) # 导入模块
+            cls = getattr(module, cls_name) # 获取module下的类
+            if is_spider:
+                instances[cls().name] = cls()
+            else:
+                instances.append(cls())
+        return instances
 
     def start(self):
         """

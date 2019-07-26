@@ -12,7 +12,7 @@ import urllib.parse
 
 class BaiduSpider(Spider):
     name = 'baidu'
-    start_urls = ['http://www.douban.com']
+    start_urls = ['http://www.baidu.com']
 
     def parse(self,response):
         yield Item(response.body[:10])

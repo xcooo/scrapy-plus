@@ -15,7 +15,7 @@ class TestSpiderMiddleware1():
         :param request:请求对象
         :return:请求对象
         """
-        print('TestSpiderMiddleware1 -- process_request')
+        # print('TestSpiderMiddleware1 -- process_request')
         return request
 
     def process_response(self,response):
@@ -24,7 +24,7 @@ class TestSpiderMiddleware1():
         :param request:响应对象
         :return:响应对象
         """
-        print('TestSpiderMiddleware1 -- process_response')
+        # print('TestSpiderMiddleware1 -- process_response')
         return response
 
 
@@ -38,7 +38,7 @@ class TestSpiderMiddleware2():
         :param request:请求对象
         :return:请求对象
         """
-        print('TestSpiderMiddleware2 -- process_request')
+        # print('TestSpiderMiddleware2 -- process_request')
         return request
 
     def process_response(self,response):
@@ -47,5 +47,5 @@ class TestSpiderMiddleware2():
         :param request:响应对象
         :return:响应对象
         """
-        print('TestSpiderMiddleware2 -- process_response')
+        # print('TestSpiderMiddleware2 -- process_response')
         return response

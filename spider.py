@@ -11,7 +11,7 @@ from scrapy_plus.item import Item
 import urllib.parse
 
 class BaiduSpider(Spider):
-    start_urls = ['http://www.douban.com']
+    start_urls = ['http://www.baidu.com']
 
 
 # 糗百爬虫
