@@ -1,7 +1,7 @@
 # encoding: utf-8
 #!/usr/bin/env python
 """
-@file: spider.py
+@file: qiubai.py
 @author: www.xcooo.cn
 @Mail: 602006050@qq.com
 """
@@ -10,12 +10,10 @@ from scrapy_plus.http.request import Request
 from scrapy_plus.item import Item
 import urllib.parse
 
-class BaiduSpider(Spider):
-    start_urls = ['http://www.douban.com']
-
 
 # 糗百爬虫
 class QiuBaiSpider(Spider):
+    name = 'qiubai'
     start_urls = []
 
     def start_requests(self):

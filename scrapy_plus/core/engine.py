@@ -19,11 +19,11 @@ from ..http.request import Request
 
 class Engine():
     # 实现对引擎的封装
-    def __init__(self,spider):
+    def __init__(self,spiders):
         """
         初始化其他组件
         """
-        self.spider = spider
+        self.spiders = spiders
         self.scheduler = Scheduler()
         self.downloader = Downloader()
         self.pipline = Pipeline()
@@ -49,14 +49,18 @@ class Engine():
     def _start_request(self):
         """初始化请求,调用爬虫的start_request方法,把所有的请求添加到调度器中"""
         # 1. 调用爬虫的start_request的方法,获取request对象
-        for start_request in self.spider.start_requests():
+        for spider_name, spider in self.spiders.items():
+            for start_request in spider.start_requests():
 
-            # 对start_request进行爬虫中间件的处理
-            start_request = self.spider_mid.process_request(start_request)
+                # 对start_request进行爬虫中间件的处理
+                start_request = self.spider_mid.process_request(start_request)
 
-            # 2. 调用调度器的add_request的方法,添加request对象到调度器中
-            self.scheduler.add_request(start_request)
-            self.total_request_num += 1  # 请求数加1
+                # 给初始的 请求对象添加spider_name属性
+                start_request.spider_name = spider_name
+
+                # 2. 调用调度器的add_request的方法,添加request对象到调度器中
+                self.scheduler.add_request(start_request)
+                self.total_request_num += 1  # 请求数加1
 
 
     def _execute_request_response_item(self):
@@ -82,8 +86,11 @@ class Engine():
         # response对象经过爬虫中间件的process_response进行处理
         response = self.spider_mid.process_response(response)
 
+        # 根据request 的spider_name的属性 ,获取爬虫实例
+        spider = self.spiders[request.spider_name]
+
         # 获取request对象响应的parse方法
-        parse = getattr(self.spider, request.parse)
+        parse = getattr(spider, request.parse)
 
         # 5. 调用爬虫的parse的方法,处理响应
         for result in parse(response):
@@ -92,6 +99,10 @@ class Engine():
             if isinstance(result, Request):
                 # 在解析函数得到request对象之后, 使用process_request对request进行处理
                 result = self.spider_mid.process_request(result)
+
+                # 对于新的请求,添加spider_name属性
+                result.spider_name = request.spider_name
+
                 self.scheduler.add_request(result)
                 self.total_request_num += 1  # 请求数加1
             # 7. 如果不是,交给pipeline的process_item的方法处理结果
