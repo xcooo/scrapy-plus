@@ -19,16 +19,16 @@ from ..http.request import Request
 
 class Engine():
     # 实现对引擎的封装
-    def __init__(self,spiders,pipelines=[]):
+    def __init__(self,spiders,pipelines=[], spider_mids=[], downloader_mids=[]):
         """
         初始化其他组件
         """
-        self.spiders = spiders
         self.scheduler = Scheduler()
         self.downloader = Downloader()
+        self.spiders = spiders  # 字典
         self.pipelines = pipelines
-        self.spider_mid = SpiderMiddleware()
-        self.downloader_mid = DownloaderMiddleware()
+        self.spider_mids = spider_mids  # 列表
+        self.downloader_mids = downloader_mids # 列表
         self.total_request_num = 0 # 总的请求数
         self.total_response_num = 0 # 总的响应数
 
@@ -53,7 +53,8 @@ class Engine():
             for start_request in spider.start_requests():
 
                 # 对start_request进行爬虫中间件的处理
-                start_request = self.spider_mid.process_request(start_request)
+                for spider_mid in self.spider_mids:
+                    start_request = spider_mid.process_request(start_request)
 
                 # 给初始的 请求对象添加spider_name属性
                 start_request.spider_name = spider_name
@@ -72,7 +73,8 @@ class Engine():
             return
 
         # request对象经过下载中间件的process_request的方法进行处理
-        request = self.downloader_mid.process_request(request)
+        for downloader_mid in self.downloader_mids:
+            request = downloader_mid.process_request(request)
 
         # 4. 调用下载器的get_response的方法,获取响应
         response = self.downloader.get_response(request)
@@ -81,10 +83,12 @@ class Engine():
         response.meta = request.meta
 
         # response对象经过下载中间件的process_response进行处理
-        response = self.downloader_mid.process_response(response)
+        for downloader_mid in self.downloader_mids:
+            response = downloader_mid.process_response(response)
 
         # response对象经过爬虫中间件的process_response进行处理
-        response = self.spider_mid.process_response(response)
+        for spider_mid in self.spider_mids:
+            response = spider_mid.process_response(response)
 
         # 根据request 的spider_name的属性 ,获取爬虫实例
         spider = self.spiders[request.spider_name]
@@ -98,7 +102,8 @@ class Engine():
             # 6. 判断结果的类型,如果是request对象, 重新交给调度器的add_request
             if isinstance(result, Request):
                 # 在解析函数得到request对象之后, 使用process_request对request进行处理
-                result = self.spider_mid.process_request(result)
+                for spider_mid in self.spider_mids:
+                    result = spider_mid.process_request(result)
 
                 # 对于新的请求,添加spider_name属性
                 result.spider_name = request.spider_name
