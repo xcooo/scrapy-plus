@@ -19,14 +19,14 @@ from ..http.request import Request
 
 class Engine():
     # 实现对引擎的封装
-    def __init__(self,spiders):
+    def __init__(self,spiders,pipelines=[]):
         """
         初始化其他组件
         """
         self.spiders = spiders
         self.scheduler = Scheduler()
         self.downloader = Downloader()
-        self.pipline = Pipeline()
+        self.pipelines = pipelines
         self.spider_mid = SpiderMiddleware()
         self.downloader_mid = DownloaderMiddleware()
         self.total_request_num = 0 # 总的请求数
@@ -107,8 +107,9 @@ class Engine():
                 self.total_request_num += 1  # 请求数加1
             # 7. 如果不是,交给pipeline的process_item的方法处理结果
             else:
-
-                self.pipline.process_item(result)
+                # 遍历所有的管道,对item进行处理
+                for pipeline in self.pipelines:
+                    result = pipeline.process_item(result,spider)
 
         self.total_response_num += 1 # 响应数加1
 
