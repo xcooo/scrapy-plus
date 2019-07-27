@@ -42,5 +42,6 @@ class QiuBaiSpider(Spider):
 
     def parse_detail(self, response):
         item = response.meta['item']
-        item['stats-vote'] = response.xpath("//span[@class='stats-vote']/i/text()")[0]
+        item['stats-vote'] = response.xpath("//span[@class='stats-vote']/i/text()")
+        item['stats-vote'] = item['stats-vote'][0] if len(item['stats-vote'])>0 else None
         yield Item(item)

@@ -10,14 +10,26 @@ from ..middlewares.spider_middlewares import SpiderMiddleware
 from ..middlewares.downloader_middlewares import DownloaderMiddleware
 from ..utils.log import logger
 from datetime import datetime
+from ..conf.settings import ASYNC_TYPE
+if ASYNC_TYPE == 'thread':
+    from multiprocessing.dummy import Pool
+elif ASYNC_TYPE == 'courtine':
+    from gevent.pool import Pool
+    from gevent.monkey import patch_all
+    patch_all()
+else:
+    raise Exception('不支持的异步方式')
 
 from .downloader import Downloader
 from .pipeline import Pipeline
 from .scheduler import Scheduler
 from .spider import Spider
 from ..http.request import Request
-from ..conf.settings import PIPELINES, SPIDERS, SPIDER_MIDDLEWARES, DOWNLOADER_MIDDLEWARES
+from ..conf.settings import PIPELINES, SPIDERS, SPIDER_MIDDLEWARES, DOWNLOADER_MIDDLEWARES, CONCURRENT_REQUEST
 import importlib
+
+import time
+
 
 class Engine():
     # 实现对引擎的封装
@@ -33,6 +45,8 @@ class Engine():
         self.downloader_mids = self._auto_import_instances(DOWNLOADER_MIDDLEWARES) # 列表
         self.total_request_num = 0 # 总的请求数
         self.total_response_num = 0 # 总的响应数
+        self.pool = Pool(5)   # 实例化线程池对象
+        self.is_running = False # 判断程序是否结束的标志
 
     def _auto_import_instances(self, path ,is_spider=False):
         """
@@ -67,6 +81,7 @@ class Engine():
         logger.info('当前开启的管道:{}'.format(PIPELINES))
         logger.info('当前开启的下载器中间件:{}'.format(DOWNLOADER_MIDDLEWARES))
         logger.info('当前开启的爬虫中间件:{}'.format(SPIDER_MIDDLEWARES))
+        self.is_running = True
         self._start_engine()
         end_time = datetime.now()
         logger.info('爬虫结束:{}'.format(end_time))
@@ -147,15 +162,24 @@ class Engine():
 
         self.total_response_num += 1 # 响应数加1
 
+    def _callback(self,temp):
+        if self.is_running:
+            self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
+
     def _start_engine(self):
         """
         具体实现引擎的细节
         :return:
         """
-        self._start_request()  # 初始化请求
+        self.pool.apply_async(self._start_request)  # 初始化请求
+        for i in range(CONCURRENT_REQUEST):
+            self.pool.apply_async(self._execute_request_response_item, callback=self._callback)
         while True:
-            self._execute_request_response_item()  # 处理单个请求
+            time.sleep(0.0001) # 避免cpu空转,影响性能
+            # self._execute_request_response_item()  # 处理单个请求
             # 循环结束的条件
             # 总的响应数量 + 总的重复数量 == 总的请求数量
-            if self.total_response_num + self.scheduler.repeat_request_nums >= self.total_request_num:
-                break
+            if self.total_request_num !=0: # 不让主线程太快的结束
+                if self.total_response_num + self.scheduler.repeat_request_nums >= self.total_request_num:
+                    self.is_running = False
+                    break
