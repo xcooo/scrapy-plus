@@ -14,6 +14,9 @@ import w3lib.url
 from hashlib import sha1
 import six
 from ..utils.log import logger
+from ..utils.queue import Queue as RedisQueue
+from ..conf.settings import SCHEDULER_PERSIST
+from ..utils.set import NoramlFilterContainer, RedisFilterContainer
 
 
 def _to_bytes(string):
@@ -31,8 +34,18 @@ def _to_bytes(string):
 
 class Scheduler():
     def __init__(self):
-        self.queue = Queue()
-        self._filter_container = set() # 保存指纹的集合
+        if not SCHEDULER_PERSIST:
+            self.queue = Queue()   # 存储的是待抓取的请求
+            # 不使用分布式的时候,使用python的集合存储指纹
+            self._filter_container = NoramlFilterContainer()
+        else:
+            # 当使用分布式的时候,使用redis队列
+            self.queue = RedisQueue()
+            # 使用分布式的时候,使用redis的集合存储指纹
+            self._filter_container = RedisFilterContainer()
+
+        # self._filter_container = set() # 保存指纹的集合
+
         self.repeat_request_nums = 0 # 统计请求重复的数量
 
     def add_request(self, request):
@@ -62,9 +75,9 @@ class Scheduler():
         """
         # 给request对象添加一个fp属性, 保存指纹
         request.fp = self._gen_fp(request)
-        if request.fp not in self._filter_container: # 判断指纹不在指纹集合中
+        if not  self._filter_container.exists(request.fp): # 判断指纹不在指纹集合中
             # 把指纹添加到指纹集合中
-            self._filter_container.add(request.fp)
+            self._filter_container.add_fp(request.fp)
             return True
         else:
             logger.info('发现重复的请求:<{} {}>'.format(request.method,request.url))
