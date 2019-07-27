@@ -63,12 +63,17 @@ class Engine():
         """
         start_time = datetime.now()
         logger.info('爬虫启动:{}'.format(start_time))
+        logger.info('当前开启的爬虫:{}'.format(SPIDERS))
+        logger.info('当前开启的管道:{}'.format(PIPELINES))
+        logger.info('当前开启的下载器中间件:{}'.format(DOWNLOADER_MIDDLEWARES))
+        logger.info('当前开启的爬虫中间件:{}'.format(SPIDER_MIDDLEWARES))
         self._start_engine()
         end_time = datetime.now()
         logger.info('爬虫结束:{}'.format(end_time))
         logger.info('爬虫一共运行:{}秒'.format((end_time-start_time).total_seconds()))
         logger.info('总的请求数量:{}个'.format(self.total_request_num))
         logger.info('总的响应数量:{}个'.format(self.total_response_num))
+        logger.info('总的重复数量:{}个'.format(self.scheduler.repeat_request_nums))
 
     def _start_request(self):
         """初始化请求,调用爬虫的start_request方法,把所有的请求添加到调度器中"""
@@ -151,5 +156,6 @@ class Engine():
         while True:
             self._execute_request_response_item()  # 处理单个请求
             # 循环结束的条件
-            if self.total_response_num >= self.total_request_num:
+            # 总的响应数量 + 总的重复数量 == 总的请求数量
+            if self.total_response_num + self.scheduler.repeat_request_nums >= self.total_request_num:
                 break
