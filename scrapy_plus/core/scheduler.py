@@ -55,6 +55,13 @@ class Scheduler():
         :param request:
         :return:None
         """
+        # 判断请求是否进行去重,如果不需要,默认添加到队列
+        if not request.filter: # 不进行去重
+            request.fp = self._gen_fp(request)
+            self.queue.put(request)
+            # logger.info('添加不去重请求:{} {}'.format(request.method,request.url))
+            return
+
         if self._filter_request(request):
             self.queue.put(request)
 

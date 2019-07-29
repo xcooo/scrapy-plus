@@ -101,7 +101,8 @@ class Engine():
     def _start_request(self):
         """初始化请求,调用爬虫的start_request方法,把所有的请求添加到调度器中"""
         # 1. 调用爬虫的start_request的方法,获取request对象
-        for spider_name, spider in self.spiders.items():
+        def _func(spider_name,spider):
+            # 如果start_request中有while_True,会发生阻塞
             for start_request in spider.start_requests():
 
                 # 对start_request进行爬虫中间件的处理
@@ -117,6 +118,11 @@ class Engine():
                 # 对redis请求数量进行加1
                 self.collector.incr(self.collector.request_nums_key)
 
+        for spider_name, spider in self.spiders.items():
+            self.pool.apply_async(_func,args=(spider_name,spider),callback=self._callback_start_request_nums)
+
+    def _callback_start_request_nums(self,temp):
+        self.collector.incr(self.collector.start_request_nums_key)
 
     def _execute_request_response_item(self):
         """处理单个请求,从调度器取出,发送请求,获取响应,parse函数处理,调度器处理"""
@@ -192,7 +198,7 @@ class Engine():
             # self._execute_request_response_item()  # 处理单个请求
             # 循环结束的条件
             # 总的响应数量 + 总的重复数量 == 总的请求数量
-            if self.collector.request_nums !=0: # 不让主线程太快的结束
+            if self.collector.start_request_nums == len(self.spiders): # 不让主线程太快的结束
                 if self.collector.response_nums + self.collector.repeat_request_nums >= self.collector.request_nums:
                     self.is_running = False
                     break

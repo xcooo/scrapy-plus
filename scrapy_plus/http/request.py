@@ -9,7 +9,7 @@
 
 
 class Request():
-    def __init__(self, url, method='GET', headers=None, params=None, data=None, parse='parse', meta=None):
+    def __init__(self, url, method='GET', headers=None, params=None, data=None, parse='parse', meta=None,filter=True):
         """
         完成请求对象的封装
         :param url: 请求的url
@@ -27,3 +27,4 @@ class Request():
         self.data = data
         self.parse = parse
         self.meta = meta
+        self.filter = filter # 默认会进行请求的去重,如果为False,不进行去重
