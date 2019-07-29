@@ -33,7 +33,7 @@ def _to_bytes(string):
 
 
 class Scheduler():
-    def __init__(self):
+    def __init__(self, collector):
         if not SCHEDULER_PERSIST:
             self.queue = Queue()   # 存储的是待抓取的请求
             # 不使用分布式的时候,使用python的集合存储指纹
@@ -46,7 +46,8 @@ class Scheduler():
 
         # self._filter_container = set() # 保存指纹的集合
 
-        self.repeat_request_nums = 0 # 统计请求重复的数量
+        self.collector = collector  # 统计请求重复的数量
+        # self.repeat_request_nums = 0 # 统计请求重复的数量
 
     def add_request(self, request):
         """
@@ -81,7 +82,8 @@ class Scheduler():
             return True
         else:
             logger.info('发现重复的请求:<{} {}>'.format(request.method,request.url))
-            self.repeat_request_nums += 1
+            # self.repeat_request_nums += 1
+            self.collector.incr(self.collector.repeat_request_nums_key)
 
 
     def _gen_fp(self, request):
